@@ -77,3 +77,11 @@ SET(deepskydad_fr1_SRC
 add_executable(indi_deepskydad_fr1 ${deepskydad_fr1_SRC})
 target_link_libraries(indi_deepskydad_fr1 indidriver)
 install(TARGETS indi_deepskydad_fr1 RUNTIME DESTINATION bin)
+
+# ########## arduinoMyRotator ###############
+SET(arduinoMyRotator_SRC
+    arduinoMyRotator.cpp)
+
+add_executable(indi_arduinoMyRotator ${arduinoMyRotator_SRC})
+target_link_libraries(indi_arduinoMyRotator indidriver)
+install(TARGETS indi_arduinoMyRotator RUNTIME DESTINATION bin)
