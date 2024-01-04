@@ -140,6 +140,7 @@ class arduinoMyRotator : public INDI::Rotator
 
     private:
         bool sendCommand(const char *cmd, char *response);
+        bool rotatorMoving;
         bool Ack();
         bool readMainValues();
         bool readMotorValues();

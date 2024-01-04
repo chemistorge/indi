@@ -325,31 +325,79 @@ bool arduinoMyRotator::Ack()
 }
 
 IPState arduinoMyRotator::MoveRotator(double angle) {
-
+    if (rotatorMoving) {
+        return IPS_ALERT;
+        LOG_INFO("Rotator is movng, please wait");
+    }
     char cmd[AMR_CMD_LEN + 1];
     int degree = angle;
-
+    rotatorMoving = true;
     snprintf(cmd, AMR_CMD_LEN + 1, AMR_MOVE_TO_ANGLE_ABSOLUTE, degree);
-    LOG_INFO(cmd);
-    sendCommand(cmd, nullptr);
-    return IPS_OK;
+    //LOG_INFO(cmd);
+    
+    return sendCommand(cmd, nullptr) ? IPS_BUSY : IPS_ALERT;
+    
 }
 
 
 bool arduinoMyRotator::SyncRotator(double angle) {
-    return true;
+
+    if (rotatorMoving) {
+        return false;
+        LOG_INFO("Rotator is movng, please wait");
+    }
+
+    char cmd[AMR_CMD_LEN + 1];
+    int degree = angle;
+
+    snprintf(cmd, AMR_CMD_LEN + 1, AMR_SET_CURRENT_ROTATOR_ANGLE, degree);
+    if (sendCommand(cmd, nullptr)) {
+        readMainValues():
+        return true;
+    } else {
+        LOGF_DEBUG("Command not sent $S", cmd);
+        return false;
+    }
 }
 
 IPState arduinoMyRotator::HomeRotator() {
-    return IPS_OK;
+    if (rotatorMoving) {
+        return IPS_ALERT;
+        LOG_INFO("Rotator is movng, please wait");
+    }
+   
+    if (sendCommand(AMR_FIND_HOMING_SENSOR, nullptr)) {
+        rotatorMoving = true;
+        return IPS_BUSY;
+    } else {
+        LOGF_DEBUG("Command not sent $S", cmd);
+        return IPS_ALERT;
+    }
+
+    
 }
 
 bool arduinoMyRotator::ReverseRotator(bool enabled) {
-    return true;
+    int set = enabled? 1 : 0;
+    char cmd[AMR_CMD_LEN + 1];
+    snprintf(cmd, AMR_CMD_LEN + 1, AMR_SET_REVERSE_DIRECTION_SET, degree);
+    if (sendCommand(cmd, nullptr)) {
+        readMainValues():
+        return true;
+    } else {
+        LOGF_DEBUG("Command not sent $S", cmd);
+        return false;
+    }
 }
 
 bool arduinoMyRotator::AbortRotator() {
-    return true;
+    if (sendCommand(AMR_HALT_MOVE, nullptr)) {
+        readMainValues():
+        return true;
+    } else {
+        LOGF_DEBUG("Command not sent $S", cmd);
+        return false;
+    }
 }
 
 
@@ -731,6 +779,7 @@ bool arduinoMyRotator::readMainValues()
 
     if (sscanf(resp, AMR_INT_RESPONSE, &temp) == 1) {
         isMovingSP[0].setState(temp == 1? ISS_ON : ISS_OFF);
+        rotatorMoving = temp == 1 ? true : false;
         isMovingSP.setState(IPS_OK);
         isMovingSP.apply();
     }
@@ -969,7 +1018,8 @@ void arduinoMyRotator::TimerHit()
     {
         return;
     }
-
-    readMainValues();
+    if (rotatorMoving) {
+        readMainValues();
+    }
     SetTimer(getCurrentPollingPeriod());
 }
